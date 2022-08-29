@@ -129,7 +129,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let config_dir = Path::new(CONFIG_DIR.as_str());
     assert!(config_dir.is_dir(), "Config dir is not a directory");
-    println!("Listening on port 8080");
+    println!(include_str!("../citadel-logo.ans"));
+    println!("cln-init by runcitadel");
+    println!("\n");
+    println!("Listening on [::1]:8080");
     let address = "[::1]:8080".parse().unwrap();
     let node_manager_service = NodeManagerService::default();
 
