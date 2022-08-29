@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use cln_init::manage::{
-    wallet_manager_client::WalletManagerClient, CreateWalletRequest, CreateWalletResult,
+    node_manager_client::NodeManagerClient, CreateWalletRequest, CreateWalletResult,
     GenSeedLength, GenSeedRequest,
 };
 
@@ -27,7 +27,7 @@ struct Cli {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Cli = Cli::parse();
-    let mut client = WalletManagerClient::connect("http://[::1]:8080").await?;
+    let mut client = NodeManagerClient::connect("http://[::1]:8080").await?;
     match args.command {
         SubCommand::GenSeed { len } => {
             let length = match len {

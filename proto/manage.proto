@@ -1,10 +1,11 @@
 syntax = "proto3";
 package manage;
 
-service WalletManager {
+service NodeManager {
     rpc CreateWallet (CreateWalletRequest) returns (CreateWalletResponse);
     rpc GenSeed (GenSeedRequest) returns (GenSeedResponse);
     rpc DeleteWallet (DeleteWalletRequest) returns (DeleteWalletResponse);
+    rpc StartDaemon (StartDaemonRequest) returns (StartDaemonResponse);
 }
 
 message CreateWalletRequest {
@@ -52,4 +53,20 @@ message GenSeedRequest {
 
 message GenSeedResponse {
     repeated string bip39 = 1;
+}
+
+message StartDaemonRequest {
+    repeated string args = 1;
+}
+
+enum StartDaemonResult {
+    START_DAEMON_SUCCESS = 0;
+    START_DAEMON_ERROR_ALREADY_RUNNING = 1;
+    START_DAEMON_ERROR_PERMISSION_DENIED = 2;
+    START_DAEMON_ERROR_NOT_FOUND = 3;
+    START_DAEMON_ERROR_UNKNOWN = 4;
+}
+
+message StartDaemonResponse {
+    StartDaemonResult result = 1;
 }

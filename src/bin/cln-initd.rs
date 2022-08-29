@@ -1,25 +1,26 @@
 use std::{io::{Read, Write}, path::Path, env};
 
 use cln_init::manage::{
-    wallet_manager_server::{WalletManager, WalletManagerServer},
+    node_manager_server::{NodeManager, NodeManagerServer},
     CreateWalletRequest, CreateWalletResponse, CreateWalletResult, DeleteWalletRequest,
-    DeleteWalletResponse, DeleteWalletResult, GenSeedRequest, GenSeedResponse, GenSeedLength,
+    DeleteWalletResponse, DeleteWalletResult, GenSeedRequest, GenSeedResponse, GenSeedLength, StartDaemonRequest, StartDaemonResponse, StartDaemonResult,
 };
 use rand::SeedableRng;
 use tonic::transport::Server;
 use tonic::{Request, Response, Status};
 use rand_chacha::ChaCha20Rng;
 use lazy_static::lazy_static;
+use sysinfo::{System, SystemExt};
 
 lazy_static! {
     static ref CONFIG_DIR: String = env::args().nth(1).expect("First argument missing!");
 }
 
 #[derive(Debug, Default)]
-pub struct WalletManagerService {}
+pub struct NodeManagerService {}
 
 #[tonic::async_trait]
-impl WalletManager for WalletManagerService {
+impl NodeManager for NodeManagerService {
     async fn create_wallet(
         &self,
         request: Request<CreateWalletRequest>,
@@ -60,7 +61,6 @@ impl WalletManager for WalletManagerService {
         request: Request<DeleteWalletRequest>,
     ) -> Result<Response<DeleteWalletResponse>, Status> {
         let _r = request.into_inner();
-        println!("Received request to delete wallet");
         Ok(Response::new(DeleteWalletResponse {
             result: DeleteWalletResult::DeleteWalletSuccess as i32,
         }))
@@ -70,7 +70,6 @@ impl WalletManager for WalletManagerService {
         request: Request<GenSeedRequest>,
     ) -> Result<Response<GenSeedResponse>, Status> {
         let r = request.into_inner();
-        println!("Received request to generate wallet");
         let entropy = ChaCha20Rng::from_entropy();
         let len = match GenSeedLength::from_i32(r.length).expect("Bad data") {
             GenSeedLength::GenSeed12Words => 128,
@@ -87,10 +86,41 @@ impl WalletManager for WalletManagerService {
             bip39: mnemonic,
         }))
     }
+    async fn start_daemon(
+        &self,
+        request: Request<StartDaemonRequest>,
+    ) -> Result<Response<StartDaemonResponse>, Status> {
+        let r = request.into_inner();
+        // First, check if lightningd is already running
+        let mut sys = System::new();
+        sys.refresh_processes();
+        let processes = sys.processes_by_name("lightningd");
+        if processes.count() > 0 {
+            return Ok(Response::new(StartDaemonResponse {
+                result: StartDaemonResult::StartDaemonErrorAlreadyRunning as i32,
+            }));
+        }
+        // Otherwise, just launch lightningd in a new process
+        let mut cmd = std::process::Command::new("lightningd");
+        cmd.args(r.args);
+        cmd.current_dir(CONFIG_DIR.as_str());
+        let child = cmd.spawn();
+        if child.is_err() {
+            return Ok(Response::new(StartDaemonResponse {
+                result: StartDaemonResult::StartDaemonErrorUnknown as i32,
+            }));
+        }
+        Ok(Response::new(StartDaemonResponse {
+            result: StartDaemonResult::StartDaemonSuccess as i32,
+        }))
+    }
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if !System::IS_SUPPORTED {
+        panic!("This OS isn't supported (yet?).");
+    }
     let args = env::args().collect::<Vec<_>>();
     // Ensure there is exactly one argument, otherwise fail
     if args.len() != 2 {
@@ -101,10 +131,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     assert!(config_dir.is_dir(), "Config dir is not a directory");
     println!("Listening on port 8080");
     let address = "[::1]:8080".parse().unwrap();
-    let wallet_manager_service = WalletManagerService::default();
+    let node_manager_service = NodeManagerService::default();
 
     Server::builder()
-        .add_service(WalletManagerServer::new(wallet_manager_service))
+        .add_service(NodeManagerServer::new(node_manager_service))
         .serve(address)
         .await?;
     Ok(())
