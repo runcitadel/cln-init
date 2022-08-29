@@ -27,7 +27,7 @@ struct Cli {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Cli = Cli::parse();
-    let mut client = NodeManagerClient::connect("http://[::1]:8080").await?;
+    let mut client = NodeManagerClient::connect("http://127.0.0.1:8080").await?;
     match args.command {
         SubCommand::GenSeed { len } => {
             let length = match len {

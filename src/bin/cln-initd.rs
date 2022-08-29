@@ -132,8 +132,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!(include_str!("../citadel-logo.ans"));
     println!("cln-init by runcitadel");
     println!("\n");
-    println!("Listening on [::1]:8080");
-    let address = "[::1]:8080".parse().unwrap();
+    println!("Listening on 0.0.0.0:8080");
+    let address = "0.0.0.0:8080".parse().unwrap();
     let node_manager_service = NodeManagerService::default();
 
     Server::builder()
