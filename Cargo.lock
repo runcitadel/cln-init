@@ -187,6 +187,7 @@ version = "0.1.0"
 dependencies = [
  "bip39",
  "clap",
+ "lazy_static",
  "prost",
  "rand",
  "rand_chacha",

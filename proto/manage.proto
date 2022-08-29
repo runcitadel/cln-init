@@ -9,6 +9,7 @@ service WalletManager {
 
 message CreateWalletRequest {
     repeated string bip39 = 1;
+    string passphrase = 2;
 }
 
 enum CreateWalletResult {
@@ -16,6 +17,7 @@ enum CreateWalletResult {
     CREATE_WALLET_ERROR_ALREADY_EXISTS = 1;
     CREATE_WALLET_ERROR_PERMISSION_DENIED = 2;
     CREATE_WALLET_ERROR_UNKNOWN = 3;
+    CREATE_WALLET_ERROR_INVALID_MNEMONIC = 4;
 }
 
   

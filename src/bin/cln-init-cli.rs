@@ -6,8 +6,15 @@ use cln_init::manage::{
 
 #[derive(Subcommand, Debug)]
 enum SubCommand {
-    GenSeed { len: i8 },
-    CreateWallet { seed: String },
+    GenSeed {
+        len: i8,
+    },
+    CreateWallet {
+        #[clap(long)]
+        seed: String,
+        #[clap(long)]
+        passphrase: Option<String>,
+    },
     DeleteWallet {},
 }
 #[derive(Parser)]
@@ -41,21 +48,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
             Ok(())
         }
-        SubCommand::CreateWallet { seed } => {
+        SubCommand::CreateWallet { seed, passphrase } => {
             let seed = seed.split(' ').map(|s| s.to_string()).collect();
-            let request = tonic::Request::new(CreateWalletRequest { bip39: seed });
+            let request = tonic::Request::new(CreateWalletRequest {
+                bip39: seed,
+                passphrase: passphrase.unwrap_or("".to_string()),
+            });
             let response = client.create_wallet(request).await?;
             match CreateWalletResult::from_i32(response.into_inner().result)
                 .expect("Invalid response from daemon")
             {
                 CreateWalletResult::CreateWalletSuccess => {
-                    println!("The wallet was created successfully")
+                    eprintln!("The wallet was created successfully")
                 }
                 CreateWalletResult::CreateWalletErrorAlreadyExists => {
-                    println!("A wallet already exists")
+                    eprintln!("A wallet already exists")
                 }
-                CreateWalletResult::CreateWalletErrorPermissionDenied => println!("Error while saving wallet: permission denied"),
-                CreateWalletResult::CreateWalletErrorUnknown => println!("An unknown error occurred while saving the wallet"),
+                CreateWalletResult::CreateWalletErrorPermissionDenied => {
+                    eprintln!("Error while saving wallet: permission denied")
+                }
+                CreateWalletResult::CreateWalletErrorUnknown => {
+                    eprintln!("An unknown error occurred while saving the wallet")
+                }
+                CreateWalletResult::CreateWalletErrorInvalidMnemonic => {
+                    eprintln!("Invalid mnemonic seed!")
+                }
             }
             Ok(())
         }

@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 bip39 = "1.0.1"
 clap = { version = "3.2.17", features = ["derive"] }
+lazy_static = "1.4.0"
 prost = "0.11.0"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
